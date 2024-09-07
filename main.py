@@ -13,6 +13,16 @@ import nltk
 from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
 from langchain.prompts import PromptTemplate
+import os
+
+
+
+from dotenv import load_dotenv
+load_dotenv()
+
+
+
+openai_api_key = os.getenv("OPENAI_API_KEY")
 
 # Ensure that necessary NLTK data is downloaded
 nltk.download('punkt')
@@ -20,7 +30,7 @@ nltk.download('stopwords')
 nltk.download('wordnet')
 
 
-openai_api_key = "f"
+
 
 llm = ChatOpenAI(api_key=openai_api_key, model="gpt-4o-mini" ,temperature=0.1)
 
