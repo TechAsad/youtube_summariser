@@ -20,6 +20,9 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
 # Check if the API key exists in the environment variables first
 openai_api_key = os.getenv("OPENAI_API_KEY")
 
