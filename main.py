@@ -10,12 +10,15 @@ from textblob import TextBlob
 import re
 import nltk
 
+from pytube import YouTube
+
 from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
 from langchain.prompts import PromptTemplate
 import os
 
-
+import ssl
+import certifi
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -23,7 +26,7 @@ load_dotenv()
 
 st.set_page_config(page_title='Youtube Video Summarizer', page_icon="▶️")
 
-
+ssl._create_default_https_context = ssl._create_unverified_context
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 
@@ -183,6 +186,11 @@ def main():
 
             # Get transcript of the video
             transcript = YouTubeTranscriptApi.get_transcript(video_id)
+            video = YouTube(video_url)
+            title = video.title
+            
+            print(title)
+
             
             print(transcript[:100])
             if not transcript:
@@ -207,6 +215,8 @@ def main():
             #st.session_state.update({"sentiment": sentiment})
             #print(sentiment)
             
+            
+            st.subheader(title)
             
             st.subheader("Topics:")
            # for idx, topic in enumerate(topics):
@@ -235,7 +245,7 @@ def main():
             st.download_button(
                 label="Download Generated Texts",
                 data=prepare_download(output),
-                file_name=f"Saved_{video_url}.txt",
+                file_name=f"Saved_{title}.txt",
                 mime="text/plain"
             )
 
