@@ -20,9 +20,16 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-
-
+# Check if the API key exists in the environment variables first
 openai_api_key = os.getenv("OPENAI_API_KEY")
+
+# If not found in environment variables, use st.secrets
+if not openai_api_key:
+    openai_api_key = st.secrets["OPENAI_API_KEY"]
+
+
+llm = ChatOpenAI(api_key=openai_api_key, model="gpt-4o-mini" ,temperature=0.1)
+
 
 # Ensure that necessary NLTK data is downloaded
 nltk.download('punkt')
@@ -31,8 +38,6 @@ nltk.download('wordnet')
 
 
 
-
-llm = ChatOpenAI(api_key=openai_api_key, model="gpt-4o-mini" ,temperature=0.1)
 
 # Function to summarize text
 def summarize_text(text, max_length=1000):

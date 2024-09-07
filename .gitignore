@@ -1,2 +1,3 @@
 ytenv
 .env
+.streamlit/st.secrets
