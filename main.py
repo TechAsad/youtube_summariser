@@ -40,8 +40,8 @@ llm = ChatOpenAI(api_key=openai_api_key, model="gpt-4o-mini" ,temperature=0.1)
 
 # Ensure that necessary NLTK data is downloaded
 nltk.download('punkt')
-nltk.download('stopwords')
-nltk.download('wordnet')
+#nltk.download('stopwords')
+#nltk.download('wordnet')
 
 
 
