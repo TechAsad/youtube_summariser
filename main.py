@@ -174,7 +174,7 @@ def main():
     max_summary_length = st.slider("Max Summary Length:", 100, 500, 1000)
 
     if st.button("Summarize"):
-        try:
+        #try:
             # Extract video ID from URL
             video_id = extract_video_id(video_url)
             if not video_id:
@@ -240,12 +240,12 @@ def main():
             )
 
 
-        except TranscriptsDisabled:
-            st.error("Transcripts are disabled for this video.")
-        except NoTranscriptFound:
-            st.error("No transcript found for this video.")
-        except Exception as e:
-            st.error(f"Error: {str(e)}")
+       # except TranscriptsDisabled:
+        #    st.error("Transcripts are disabled for this video.")
+        #except NoTranscriptFound:
+        #    st.error("No transcript found for this video.")
+        #except Exception as e:
+        #    st.error(f"Error: {str(e)}")
 
 if __name__ == "__main__":
     main()
