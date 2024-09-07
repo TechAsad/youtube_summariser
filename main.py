@@ -5,21 +5,64 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.decomposition import LatentDirichletAllocation
-from transformers import pipeline
+from transformers.pipelines import pipeline
 from textblob import TextBlob
 import re
 import nltk
+
+from langchain_openai import ChatOpenAI
+from langchain_core.output_parsers import StrOutputParser
+from langchain.prompts import PromptTemplate
 
 # Ensure that necessary NLTK data is downloaded
 nltk.download('punkt')
 nltk.download('stopwords')
 nltk.download('wordnet')
 
+
+openai_api_key = "f"
+
+llm = ChatOpenAI(api_key=openai_api_key, model="gpt-4o-mini" ,temperature=0.1)
+
 # Function to summarize text
-def summarize_text(text, max_length=50000):
+def summarize_text(text, max_length=1000):
     summarization_pipeline = pipeline("summarization")
     summary = summarization_pipeline(text, max_length=max_length, min_length=50, do_sample=False)
     return summary[0]['summary_text']
+
+
+
+def summarize_vid(text, max_length=1000):
+    print("Generating Summary")
+
+    prompt_chat = PromptTemplate(
+    template="""<|begin_of_text|><|start_header_id|>system<|end_header_id|> 
+
+    you are a helpful assistant, provide a comprehensive summary for the youtube video. The transcript has been provided.
+    Summarize the main points and their comprehensive explanations from below text, presenting them under appropriate headings. 
+    Use various Emoji to symbolize different sections, and format the content as a cohesive paragraph under each heading. 
+    Ensure the summary is clear, detailed, and informative, reflecting the executive summary style found in news articles. 
+    Avoid using phrases that directly reference 'the script provides' to maintain a direct and objective tone.
+    
+    <|eot_id|><|start_header_id|>user<|end_header_id|>
+    video trancript: {text} \n\n 
+    word limit: {words}
+ 
+    Summary:
+    <|eot_id|><|start_header_id|>assistant<|end_header_id|>
+    """,
+    input_variables=[ "text", "words"],
+    )
+
+
+    chain_simple = prompt_chat | llm | StrOutputParser()
+
+
+
+    #chain = prompt_chat | llm | 
+    response = chain_simple.invoke({ "text": text, "words": max_length})
+    return response
+
 
 # Function to extract keywords
 def extract_keywords(text):
@@ -35,6 +78,35 @@ def extract_keywords(text):
     top_keywords = sorted(vocabulary, key=vocabulary.get, reverse=True)[:5]
 
     return top_keywords
+
+
+def video_topics(text):
+
+    prompt_chat = PromptTemplate(
+    template="""<|begin_of_text|><|start_header_id|>system<|end_header_id|> 
+
+    you are a helpful assistant, provide only five main topics being discussed in this youtube video. The transcript of the video has been provided.
+    just give title to eeach topic. do not write anything else.
+    
+    <|eot_id|><|start_header_id|>user<|end_header_id|>
+    video trancript: {text} \n\n 
+ 
+    Summary:
+    <|eot_id|><|start_header_id|>assistant<|end_header_id|>
+    """,
+    input_variables=[ "text"],
+    )
+
+
+    chain_simple = prompt_chat | llm | StrOutputParser()
+
+
+
+    #chain = prompt_chat | llm | 
+    response = chain_simple.invoke({ "text": text})
+    return response
+
+
 
 # Function to perform topic modeling (LDA)
 def topic_modeling(text):
@@ -63,6 +135,12 @@ def extract_video_id(url):
             break
     return video_id
 
+
+if "summary" not in st.session_state:
+    st.session_state["summary"]= []
+    st.session_state["topics"]= []
+    st.session_state.clear()
+
 # Main Streamlit app
 def main():
     st.title("YouTube Video Summarizer")
@@ -71,7 +149,7 @@ def main():
     video_url = st.text_input("Enter YouTube Video URL:", "")
 
     # User customization options
-    max_summary_length = st.slider("Max Summary Length:", 1000, 20000, 50000)
+    max_summary_length = st.slider("Max Summary Length:", 100, 500, 1000)
 
     if st.button("Summarize"):
         try:
@@ -83,38 +161,62 @@ def main():
 
             # Get transcript of the video
             transcript = YouTubeTranscriptApi.get_transcript(video_id)
+            
+            print(transcript[:100])
             if not transcript:
                 st.error("Transcript not available for this video.")
                 return
 
             video_text = ' '.join([line['text'] for line in transcript])
-
+            print(video_text[:100])
             # Summarize the transcript
-            summary = summarize_text(video_text, max_length=max_summary_length)
-
+            summary = summarize_vid(video_text, max_length=max_summary_length)
+            st.session_state.update({"summary": summary})
+            print(summary)
             # Extract keywords from the transcript
-            keywords = extract_keywords(video_text)
-
+            #keywords = extract_keywords(video_text)
+            #print(keywords)
             # Perform topic modeling
-            topics = topic_modeling(video_text)
-
+            topics = video_topics(video_text)
+            st.session_state.update({"topics": topics})
+            print(topics)
             # Perform sentiment analysis
-            sentiment = TextBlob(video_text).sentiment
-
+            #sentiment = TextBlob(video_text).sentiment
+            #st.session_state.update({"sentiment": sentiment})
+            #print(sentiment)
+            
+            
+            st.subheader("Topics:")
+           # for idx, topic in enumerate(topics):
+            st.write(st.session_state["topics"])
+            #st.write(f"Topic {topics}")
+            
             # Display summarized text, keywords, topics, and sentiment
             st.subheader("Video Summary:")
-            st.write(summary)
+            st.write(st.session_state["summary"])
+            #st.write(summary)
 
-            st.subheader("Keywords:")
-            st.write(keywords)
+            #st.subheader("Keywords:")
+            #st.write(keywords)
 
-            st.subheader("Topics:")
-            for idx, topic in enumerate(topics):
-                st.write(f"Topic {idx+1}: {', '.join(topic)}")
+            #st.subheader("Sentiment Analysis:")
+            #st.write(f"Polarity: {sentiment.polarity}")
+            #st.write(f"Subjectivity: {sentiment.subjectivity}")
+            
+            output= f" Topics:\n {topics} \n\n Summary:\n {summary}"
+            
+            def prepare_download(outputs):
+                    content = output
+                    
+                    return content
+            
+            st.download_button(
+                label="Download Generated Texts",
+                data=prepare_download(output),
+                file_name=f"Saved_{video_url}.txt",
+                mime="text/plain"
+            )
 
-            st.subheader("Sentiment Analysis:")
-            st.write(f"Polarity: {sentiment.polarity}")
-            st.write(f"Subjectivity: {sentiment.subjectivity}")
 
         except TranscriptsDisabled:
             st.error("Transcripts are disabled for this video.")
