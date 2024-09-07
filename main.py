@@ -21,6 +21,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+st.set_page_config(page_title='Youtube Video Summarizer', page_icon="▶️")
+
+
+
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 # Check if the API key exists in the environment variables first
